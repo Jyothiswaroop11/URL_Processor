@@ -5,6 +5,7 @@ import json
 import time
 import logging
 from logging.handlers import RotatingFileHandler
+from tkinter.constants import CURRENT
 import pandas as pd
 from datetime import datetime
 from urllib.parse import urlparse
@@ -20,7 +21,14 @@ from openpyxl.styles import PatternFill
 import base64
 from report_handler import ReportHandler
 
+
 class URLValidator:
+    # Define blocked URLs as class variables
+    BLOCKED_URLS = [
+        "r1az1.ztg.gso.adp.com",
+        "r1az2.ztg.gso.adp.com"
+    ]
+
     @staticmethod
     def load_config():
         """Load configuration from config.json"""
@@ -51,7 +59,7 @@ class URLValidator:
                 "project_root": project_root,
                 "excel_path": os.path.join(project_root, config.get("excel_path", "resources/links.xlsx")),
                 "chrome_driver": os.path.join(project_root,
-                                            config.get("chrome_driver_path", "resources/drivers/chromedriver.exe")),
+                                              config.get("chrome_driver_path", "resources/drivers/chromedriver.exe")),
                 "reports": os.path.join(project_root, "reports", "validation-reports"),
                 "logs": os.path.join(project_root, "logs"),
                 "logs_current": os.path.join(project_root, "logs", "Current Logs"),
@@ -101,7 +109,7 @@ class URLValidator:
 
             file_handler = RotatingFileHandler(
                 current_log_file,
-                maxBytes=10*1024*1024,
+                maxBytes=10 * 1024 * 1024,
                 backupCount=5,
                 encoding='utf-8'
             )
@@ -178,7 +186,7 @@ class URLValidator:
 
     @staticmethod
     def process_url(url, row_number, config):
-        """Process a single URL and return results with improved screenshot capture for all URLs"""
+        """Process a single URL and return results"""
         start_time = time.time()
         driver = None
         test_logs = []
@@ -243,36 +251,28 @@ class URLValidator:
         }
 
         try:
+            # Check if URL is in blocked URLs list
+            if any(blocked_url in url.lower() for blocked_url in URLValidator.BLOCKED_URLS):
+                result.update({
+                    'status': 'Warning',
+                    'error': "Page Is Blocked By PaloAlto",
+                    'category': 'WARNING',
+                    'test_logs': test_logs
+                })
+                return result
+
             formatted_url = URLValidator.format_url(url)
             driver = URLValidator.create_web_driver()
-            driver.set_window_size(1920, 1080)  # Ensure consistent screenshot size
 
             try:
-                # Initial page load for all URLs
                 log_step('INFO', f"Launching URL Is ==> {formatted_url}")
                 driver.get(formatted_url)
-                time.sleep(2)  # Initial wait for page load
+                time.sleep(2)
 
                 # First screenshot attempt
                 screenshot_base64 = capture_screenshot(driver, " (first attempt)")
                 if screenshot_base64:
                     result['screenshot_base64'] = screenshot_base64
-
-                # Special handling for PaloAlto blocked URLs
-                if "ceas.sase.responses.es.oneadp.com" in url:
-                    if not result.get('screenshot_base64'):
-                        # Second attempt for blocked URLs
-                        screenshot_base64 = capture_screenshot(driver, " (retry for blocked URL)")
-                        if screenshot_base64:
-                            result['screenshot_base64'] = screenshot_base64
-
-                    result.update({
-                        'status': 'Warning',
-                        'error': "Page Is Blocked By PaloAlto",
-                        'category': 'WARNING',
-                        'test_logs': test_logs
-                    })
-                    return result
 
                 if not URLValidator.is_valid_url(url):
                     result.update({
@@ -283,16 +283,9 @@ class URLValidator:
                     })
                     return result
 
-                # Normal URL processing
                 page_title = driver.title
                 redirected_url = driver.current_url
                 load_time = (time.time() - start_time) * 1000
-
-                # Take screenshot after successful page load
-                if not result.get('screenshot_base64'):
-                    screenshot_base64 = capture_screenshot(driver, " (after successful load)")
-                    if screenshot_base64:
-                        result['screenshot_base64'] = screenshot_base64
 
                 log_step('INFO', f"Title Of The Page Is ==> {page_title}")
                 log_step('INFO', f"Redirected URL Is ==> {redirected_url}")
@@ -310,18 +303,11 @@ class URLValidator:
                         result['screenshot_base64'] = screenshot_base64
 
             except Exception as e:
-                if "ceas.sase.responses.es.oneadp.com" in url:
-                    result.update({
-                        'status': 'Warning',
-                        'error': "Page Is Blocked By PaloAlto",
-                        'category': 'WARNING',
-                    })
-                else:
-                    result.update({
-                        'status': 'Failed',
-                        'error': str(e),
-                        'category': 'ERROR',
-                    })
+                result.update({
+                    'status': 'Failed',
+                    'error': str(e),
+                    'category': 'ERROR',
+                })
 
                 # Try to capture error state screenshot
                 if not result.get('screenshot_base64'):
@@ -331,19 +317,14 @@ class URLValidator:
 
         except Exception as e:
             result.update({
-                'status': 'Failed' if "ceas.sase.responses.es.oneadp.com" not in url else 'Warning',
+                'status': 'Failed',
                 'error': str(e),
-                'category': 'ERROR' if "ceas.sase.responses.es.oneadp.com" not in url else 'WARNING',
+                'category': 'ERROR',
             })
 
         finally:
             result['test_logs'] = test_logs
             if driver:
-                # Last chance screenshot capture
-                if not result.get('screenshot_base64'):
-                    screenshot_base64 = capture_screenshot(driver, " (final cleanup)")
-                    if screenshot_base64:
-                        result['screenshot_base64'] = screenshot_base64
                 try:
                     driver.quit()
                 except Exception:
@@ -372,21 +353,17 @@ class URLValidator:
 
     @staticmethod
     def check_url_status(driver):
-        """Check URL status with updated warning logic"""
+        """Check URL status"""
         try:
             current_url = driver.current_url.lower()
-            page_source = driver.page_source.lower() if driver.page_source else ""
             page_title = driver.title if driver.title else ""
 
             navigation_start = driver.execute_script("return window.performance.timing.navigationStart")
             response_end = driver.execute_script("return window.performance.timing.responseEnd")
             duration = response_end - navigation_start
 
-            # Check for PaloAlto URLs and related errors first
-            if ("ceas.sase.responses.es.oneadp.com" in current_url or
-                    "ceas.sase.responses.es.oneadp.com" in page_source or
-                    ("net::err_name_not_resolved" in page_source and "ceas.sase.responses.es.oneadp.com" in str(
-                        current_url))):
+            # Check for blocked URLs
+            if any(blocked_url in current_url for blocked_url in URLValidator.BLOCKED_URLS):
                 return ReportHandler.format_validation_result(
                     url=current_url,
                     status='Warning',
@@ -395,26 +372,6 @@ class URLValidator:
                     duration=duration,
                     error='Page Is Blocked By PaloAlto',
                     category='WARNING'
-                )
-            elif "This page isn't working" in page_source:
-                return ReportHandler.format_validation_result(
-                    url=current_url,
-                    status='Failed',
-                    title=page_title,
-                    redirected_url=current_url,
-                    duration=duration,
-                    error='Page is failing',
-                    category='ERROR'
-                )
-            elif "web - access blocked" in page_source:
-                return ReportHandler.format_validation_result(
-                    url=current_url,
-                    status='Skip',
-                    title=page_title,
-                    redirected_url=current_url,
-                    duration=duration,
-                    error='Web Access Blocked',
-                    category='SKIP'
                 )
             else:
                 return ReportHandler.format_validation_result(
@@ -438,18 +395,6 @@ class URLValidator:
                 error=str(e),
                 category='SYSTEM_ERROR'
             )
-
-    @staticmethod
-    def capture_screenshot_base64(driver):
-        """Capture screenshot and convert to base64"""
-        try:
-            driver.execute_script("document.body.style.overflow = 'hidden';")
-            screenshot = driver.get_screenshot_as_png()
-            driver.execute_script("document.body.style.overflow = '';")
-            return base64.b64encode(screenshot).decode('utf-8')
-        except Exception as e:
-            logging.error(f"Error capturing screenshot: {str(e)}")
-            return None
 
     @staticmethod
     def read_excel_urls(excel_path, sheet_name):
@@ -573,7 +518,6 @@ class ValidationRunner:
         self.start_time = datetime.now()
         self.log_path = URLValidator.setup_logging()
         self.setup_console_output()
-        #print(f"Add a blank line before starting")
         print(f"{Fore.YELLOW}--------------------------")
         logging.info("ValidationRunner initialized")
         logging.info(f"Start Time: {self.start_time.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -666,7 +610,6 @@ class ValidationRunner:
 
             total_urls = len(urls)
             print(f"\n{Fore.GREEN}✓ Found {total_urls} URLs to process{Style.RESET_ALL}")
-            # print("Add blank line before progress bar")
             print(f"\n{Fore.GREEN}-----------------------------")
 
             results = []
@@ -707,8 +650,7 @@ class ValidationRunner:
                         })
                         pbar.update(1)
 
-                    #print(f"\n newline after each URL is processed")
-                    print(f"\n{Fore.GREEN}=========================newline after each URL is processed")
+                    print(f"\n{Fore.GREEN}=========================")
 
             print(f"\n{Fore.CYAN}Generating reports...{Style.RESET_ALL}")
 
