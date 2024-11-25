@@ -1,0 +1,35 @@
+{
+    "excel_path": "resources/links.xlsx",
+    "chrome_driver_path": "resources/drivers/chromedriver.exe",
+    "sheet_name": "Sheet1",
+    "page_load_timeout": 60,
+    "max_retries": 2,
+    "retry_delay": 2,
+    "wait_between_urls": 2,
+    "paths": {
+        "screenshots_dir": "reports/screenshots",
+        "reports_dir": "reports/validation-reports",
+        "logs_dir": "logs",
+        "logs_current": "logs/Current Logs",
+        "logs_backup": "logs/Backup Logs",
+        "output_excel_dir": "reports/excel-reports",
+        "backup_dir": "reports/backups"
+    },
+    "reporting": {
+        "generate_excel": true,
+        "generate_html": true,
+        "include_screenshots": true,
+        "detailed_report": true
+    },
+    "logging": {
+        "level": "INFO",
+        "file_format": "validation_%Y%m%d.log",
+        "console_output": true
+    },
+    "validation": {
+        "check_ssl": true,
+        "verify_content": true,
+        "capture_performance": true,
+        "check_broken_links": false
+    }
+}

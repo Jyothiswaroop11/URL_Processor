@@ -1,0 +1,1453 @@
+
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>URL Validation Report - 20241125_060443</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+                    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+                    <style>
+            * { 
+                margin: 0; 
+                padding: 0; 
+                box-sizing: border-box; 
+            }
+
+            body { 
+                font-family: 'Inter', sans-serif;
+                line-height: 1.6;
+                font-size: 11px;
+                background: #f8f9fa;
+                color: #333;
+                overflow: hidden;
+                height: 100vh;
+            }
+
+            .layout {
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            .stats-bar {
+                display: flex;
+                justify-content: space-evenly;
+                background: #658de6;
+                padding: 5px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                gap: 10px;
+            }
+
+            .stat-item {
+                text-align: center;
+                padding: 0px 15px;
+                border-radius: 6px;
+                min-width: 120px;
+                transition: transform 0.3s ease;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+
+            .stat-item:hover {
+                transform: translateY(-2px);
+            }
+
+            .stat-item.total {
+                background: linear-gradient(145deg, #3b82f6, #2563eb);
+                box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+            }
+            .stat-item.total .stat-value {
+                color: #ffffff;
+                font-size: 1.5rem;
+                font-weight: 700;
+            }
+            .stat-item.total .stat-label {
+                color: #bfdbfe;
+            }
+
+            .stat-item.passed {
+                background: linear-gradient(145deg, #22c55e, #16a34a);
+                box-shadow: 0 2px 4px rgba(34, 197, 94, 0.2);
+            }
+            .stat-item.passed .stat-value {
+                color: #ffffff;
+                font-size: 1.5rem;
+                font-weight: 700;
+            }
+            .stat-item.passed .stat-label {
+                color: #bbf7d0;
+            }
+
+            .stat-item.failed {
+                background: linear-gradient(145deg, #ef4444, #dc2626);
+                box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+            }
+            .stat-item.failed .stat-value {
+                color: #ffffff;
+                font-size: 1.5rem;
+                font-weight: 700;
+            }
+            .stat-item.failed .stat-label {
+                color: #fecaca;
+            }
+
+            .stat-item.pass-rate {
+                background: linear-gradient(145deg, #8b5cf6, #7c3aed);
+                box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
+            }
+            .stat-item.pass-rate .stat-value {
+                color: #ffffff;
+                font-size: 1.5rem;
+                font-weight: 700;
+            }
+            .stat-item.pass-rate .stat-label {
+                color: #ddd6fe;
+            }
+
+            .stat-item.duration {
+                background: linear-gradient(145deg, #f59e0b, #d97706);
+                box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+            }
+            .stat-item.duration .stat-value {
+                color: #ffffff;
+                font-size: 1.25rem;
+                font-weight: 700;
+            }
+            .stat-item.duration .stat-label {
+                color: #fef3c7;
+            }
+
+            .stat-label {
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .content-wrapper {
+                display: flex;
+                flex: 1;
+                overflow: hidden;
+            }
+
+            .left-panel {
+                width: 400px;
+                background: white;
+                border-right: 1px solid #ddd;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+
+            /* Updated Warning Styles */
+            .url-item.warning {
+                background-color: rgba(255, 152, 0, 0.1);
+            }
+            .status-badge.warning { 
+                background-color: #fff3e0; 
+                color: #ef6c00;
+            }
+            .level-badge.warning {
+                background: linear-gradient(145deg, #ff9800, #f57c00);
+                color: white;
+                box-shadow: 0 2px 4px rgba(255, 152, 0, 0.2);
+            }
+
+            .filter-bar {
+                padding: 15px;
+                border-bottom: 1px solid #ddd;
+                background: #f8f9fa;
+            }
+
+            .filter-controls {
+                display: flex;
+                gap: 8px;
+                margin-bottom: 8px;
+            }
+
+            .filter-input {
+                flex: 1;
+                padding: 8px 12px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                font-size: 0.9rem;
+                outline: none;
+            }
+
+            .filter-input:focus {
+                border-color: #2193b0;
+                box-shadow: 0 0 0 2px rgba(33, 147, 176, 0.2);
+            }
+
+            .filter-button {
+                padding: 8px 12px;
+                border: none;
+                border-radius: 4px;
+                background: #2193b0;
+                color: white;
+                cursor: pointer;
+                font-size: 0.9rem;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                transition: background 0.3s ease;
+            }
+
+            .filter-button:hover {
+                background: #1a7b93;
+            }
+
+            .url-list {
+                list-style: none;
+                overflow-y: auto;
+                flex: 1;
+            }
+
+            .url-item {
+                padding: 15px;
+                border-bottom: 1px solid #eee;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                background: white;
+            }
+
+            .url-item:hover {
+                background: #f5f5f5;
+            }
+
+            .url-item.active {
+                background: #e3f2fd;
+                border-left: 3px solid #2193b0;
+            }
+
+            .url-item.success {
+                background-color: #FFFFFF;
+            }
+
+            .url-item.failed {
+                background-color: rgba(220, 53, 69, 0.1);
+            }
+
+            .url-item.skip {
+                background-color: rgba(71, 85, 105, 0.1);
+            }
+
+            .url-item-content {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                width: 100%;
+            }
+
+            .url-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                width: 100%;
+                gap: 10px;
+                font-size: 10px;
+            }
+
+            .url-title {
+                flex: 1;
+                text-align: left;
+                font-size: 0.9rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                color: #333333;
+            }
+
+            .status-container {
+                flex-shrink: 0;
+                text-align: right;
+            }
+
+            .right-panel {
+                flex: 1;
+                padding: 20px;
+                overflow-y: auto;
+                background: #fff;
+            }
+
+            .status-badge {
+                padding: 4px 12px;
+                border-radius: 4px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                display: inline-block;
+                min-width: 70px;
+                text-align: center;
+            }
+
+            .status-badge.success,
+            .status-badge.pass { 
+                background-color: #e8f5e9; 
+                color: #2e7d32;
+            }
+
+            .status-badge.failed,
+            .status-badge.fail { 
+                background-color: #ffebee; 
+                color: #c62828;
+            }
+
+            .status-badge.warning { 
+                background-color: #fff3e0; 
+                color: #ef6c00;
+            }
+
+            .status-badge.skip { 
+                background-color: #e2e8f0; 
+                color: #475569;
+            }
+
+            .level-badge {
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                display: inline-block;
+                min-width: 70px;
+                text-align: center;
+                text-transform: uppercase;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+
+            .level-badge.pass,
+            .level-badge.success {
+                background: linear-gradient(145deg, #22c55e, #16a34a);
+                color: white;
+            }
+
+            .level-badge.fail,
+            .level-badge.error,
+            .level-badge.failed {
+                background: linear-gradient(145deg, #ef4444, #dc2626);
+                color: white;
+            }
+
+            .level-badge.warning {
+                background: linear-gradient(145deg, #ff9800, #f57c00);
+                color: white;
+            }
+
+            .level-badge.info {
+                background: linear-gradient(145deg, #3b82f6, #2563eb);
+                color: white;
+            }
+
+            .level-badge.skip {
+                background: linear-gradient(145deg, #6b7280, #4b5563);
+                color: white;
+            }
+
+            .screenshot-section {
+                margin-top: 20px;
+            }
+
+            .screenshot-container {
+                background: #f8f9fa;
+                border-radius: 8px;
+                padding: 20px;
+            }
+
+            .screenshot-btn {
+                background: #2196f3;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 0.9rem;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 15px;
+                transition: background-color 0.3s ease;
+            }
+
+            .screenshot-btn:hover {
+                background: #1976d2;
+            }
+
+            .screenshot-wrapper {
+                background: white;
+                border-radius: 4px;
+                padding: 20px;
+                text-align: center;
+            }
+
+            .screenshot-image {
+                max-width: 100%;
+                height: auto;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: transform 0.2s ease;
+            }
+
+            .screenshot-image:hover {
+                transform: scale(1.02);
+            }
+
+            .no-screenshot {
+                padding: 40px;
+                color: #666;
+                font-style: italic;
+                text-align: center;
+            }
+
+            .no-screenshot i {
+                font-size: 2rem;
+                margin-bottom: 10px;
+            }
+
+            .screenshot-modal {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.9);
+                z-index: 1000;
+                overflow: hidden;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+
+            .screenshot-modal.active {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                opacity: 1;
+            }
+
+            .screenshot-modal img {
+                max-width: 90%;
+                max-height: 90vh;
+                object-fit: contain;
+                margin: auto;
+                border: 2px solid white;
+                box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+                transform: scale(0.9);
+                transition: transform 0.3s ease;
+            }
+
+            .screenshot-modal.active img {
+                transform: scale(1);
+            }
+
+            .close-modal {
+                position: absolute;
+                top: 20px;
+                right: 30px;
+                color: #f1f1f1;
+                font-size: 35px;
+                font-weight: bold;
+                cursor: pointer;
+                z-index: 1001;
+                transition: color 0.3s ease;
+            }
+
+            .close-modal:hover {
+                color: #ff4444;
+            }
+
+            /* Log container styles */
+            .log-container {
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                overflow: hidden;
+                margin-bottom: 20px;
+                background: #ffffff;
+            }
+
+            .log-table-container {
+                max-height: 400px;
+                overflow-y: auto;
+            }
+
+            .log-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.9rem;
+            }
+
+            .log-table th {
+                position: sticky;
+                top: 0;
+                background: #f8f9fa;
+                padding: 12px;
+                text-align: left;
+                border-bottom: 2px solid #ddd;
+                font-weight: 600;
+                color: #333;
+            }
+
+            .log-table td {
+                padding: 10px 12px;
+                vertical-align: middle;
+                border-bottom: 1px solid #eee;
+            }
+
+            .log-message {
+                font-family: 'Consolas', monospace;
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+
+            .log-timestamp {
+                white-space: nowrap;
+                color: #666;
+                font-family: 'Consolas', monospace;
+            }
+
+            /* Scrollbar Styles */
+            ::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+            }
+
+            ::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 4px;
+            }
+
+            ::-webkit-scrollbar-thumb {
+                background: #888;
+                border-radius: 4px;
+            }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: #666;
+            }
+
+            /* Responsive Styles */
+            @media screen and (max-width: 1200px) {
+                .left-panel {
+                    width: 350px;
+                }
+            }
+
+            /* Responsive Styles Continued */
+        @media screen and (max-width: 768px) {
+            .stat-item {
+                min-width: 120px;
+                padding: 8px 15px;
+            }
+
+            .stat-value {
+                font-size: 1.2rem;
+            }
+        }
+
+        /* Log Entry Styles */
+        .log-entry {
+            transition: background-color 0.2s ease;
+        }
+
+        .log-entry:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .log-entry:hover {
+            background-color: #f0f4f8;
+        }
+
+        /* Updated PaloAlto Message Styles */
+        .paloalto-message {
+            color: #f57c00;  /* Orange color for warning */
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* Entry Status Colors */
+        .log-entry.warning {
+            background-color: rgba(255, 152, 0, 0.1);
+        }
+
+        .log-entry.error,
+        .log-entry.fail {
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+
+        .log-entry.success,
+        .log-entry.pass {
+            background-color: rgba(34, 197, 94, 0.05);
+        }
+
+        .log-entry.skip {
+            background-color: rgba(107, 114, 128, 0.1);
+        }
+
+        /* Custom Scrollbar for Firefox */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #888 #f1f1f1;
+        }
+
+        /* URL Content Styles */
+        .url-content {
+            padding: 20px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Log Section Styles */
+        .logs-section {
+            margin-bottom: 30px;
+        }
+
+        /* Custom Table Scrollbar */
+        .log-table-container::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .log-table-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .log-table-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .log-table-container::-webkit-scrollbar-thumb:hover {
+            background: #666;
+        }
+
+        /* Modal Animation */
+        @keyframes modalFade {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .screenshot-modal.active {
+            animation: modalFade 0.3s ease-out forwards;
+        }
+
+        /* Warning Specific Styles - Enhanced */
+        .url-item.warning:hover {
+            background-color: rgba(255, 152, 0, 0.15);
+        }
+
+        .status-badge.warning {
+            background: #fff3e0;
+            color: #ef6c00;
+            border: 1px solid #ffb74d;
+        }
+
+        .level-badge.warning {
+            background: linear-gradient(145deg, #ff9800, #f57c00);
+            color: white;
+            box-shadow: 0 2px 4px rgba(255, 152, 0, 0.2);
+            border: none;
+        }
+
+        /* Status Transition Effects */
+        .status-badge {
+            transition: all 0.3s ease;
+        }
+
+        .status-badge:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Additional Warning Indicators */
+        .warning-icon::before {
+            content: '⚠';
+            margin-right: 4px;
+            color: #f57c00;
+        }
+
+        /* Log Message Formatting */
+        .log-message {
+            font-family: 'Consolas', monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.5;
+        }
+
+        .log-message.warning {
+            color: #f57c00;
+            font-weight: 500;
+        }
+
+        /* Screenshot Button States */
+        .screenshot-btn {
+            transition: all 0.3s ease;
+        }
+
+        .screenshot-btn:hover {
+            background: #1976d2;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .screenshot-btn.active {
+            background: #dc3545;
+        }
+
+        /* Enhanced Modal Styles */
+        .screenshot-modal.active .screenshot-image {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            border: 3px solid white;
+        }
+
+        /* Additional Accessibility Features */
+        .status-badge:focus,
+        .screenshot-btn:focus,
+        .filter-button:focus {
+            outline: 2px solid #2196f3;
+            outline-offset: 2px;
+        }
+
+        /* Print Styles */
+        @media print {
+            .screenshot-btn,
+            .filter-bar {
+                display: none;
+            }
+
+            .url-item {
+                break-inside: avoid;
+            }
+
+            .screenshot-image {
+                max-width: 100% !important;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+                </head>
+                <body>
+                    <div class="layout">
+                        <div class="stats-bar">
+                            <div class="stat-item total">
+                                <div class="stat-label">Total Tests</div>
+                                <div class="stat-value">6</div>
+                            </div>
+                            <div class="stat-item passed">
+                                <div class="stat-label">Passed</div>
+                                <div class="stat-value">4</div>
+                            </div>
+                            <div class="stat-item failed">
+                                <div class="stat-label">Failed</div>
+                                <div class="stat-value">2</div>
+                            </div>
+                            <div class="stat-item pass-rate">
+                                <div class="stat-label">Pass Rate</div>
+                                <div class="stat-value">66.7%</div>
+                            </div>
+                            <div class="stat-item duration">
+                                <div class="stat-label">Duration</div>
+                                <div class="stat-value">0h 0m 17s+587ms</div>
+                            </div>
+                        </div>
+                        <div class="content-wrapper">
+                            <div class="left-panel">
+                                <div class="filter-bar">
+                                    <div class="filter-controls">
+                                        <select id="statusFilter" class="filter-input" onchange="filterItems()">
+            <option value="all">All Status</option>
+                                                        <option value="success">Success</option>
+                                                        <option value="failed">Failed</option>
+                                                        <option value="warning">Warning</option>
+                                                        <option value="skip">Skipped</option>
+                                                    </select>
+                                                    <button class="filter-button" onclick="resetFilters()" title="Clear Filters">
+                                                        <i class="fas fa-times"></i> Clear
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <ul class="url-list">
+                    <li class="url-item success" onclick="showContent(0)">
+                        <div class="url-item-content">
+                            <div class="url-header">
+                                <div class="url-title">Validating URL: <b>https://www.google.com/</b></div>
+                                <div class="status-container">
+                                    <span class="status-badge success">Success</span>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                
+                    <li class="url-item success" onclick="showContent(1)">
+                        <div class="url-item-content">
+                            <div class="url-header">
+                                <div class="url-title">Validating URL: <b>https://httpstat.us/403</b></div>
+                                <div class="status-container">
+                                    <span class="status-badge success">Success</span>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                
+                    <li class="url-item failed" onclick="showContent(2)">
+                        <div class="url-item-content">
+                            <div class="url-header">
+                                <div class="url-title">Validating URL: <b>msess.gov.pt</b></div>
+                                <div class="status-container">
+                                    <span class="status-badge failed">Failed</span>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                
+                    <li class="url-item success" onclick="showContent(3)">
+                        <div class="url-item-content">
+                            <div class="url-header">
+                                <div class="url-title">Validating URL: <b>https://expired.badssl.com/</b></div>
+                                <div class="status-container">
+                                    <span class="status-badge success">Success</span>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                
+                    <li class="url-item warning" onclick="showContent(4)">
+                        <div class="url-item-content">
+                            <div class="url-header">
+                                <div class="url-title">Validating URL: <b>ceas.sase.responses.es.oneadp.com</b></div>
+                                <div class="status-container">
+                                    <span class="status-badge warning">Warning</span>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                
+                    <li class="url-item success" onclick="showContent(5)">
+                        <div class="url-item-content">
+                            <div class="url-header">
+                                <div class="url-title">Validating URL: <b>https://slow.badssl.com/</b></div>
+                                <div class="status-container">
+                                    <span class="status-badge success">Success</span>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+                                        </div>
+
+                                        <div class="right-panel">
+                                            
+                <div id="content-0" class="url-content" style="display: none;">
+                    <div class="logs-section">
+                        <div class="log-container">
+                            <div class="log-table-container">
+                                <table class="log-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Status</th>
+                                            <th>Timestamp</th>
+                                            <th>Details</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+            
+                            <tr class="log-entry pass" data-level="PASS">
+                                <td class="log-level">
+                                    <span class="level-badge pass">PASS</span>
+                                </td>
+                                <td class="log-timestamp">06:03:44 AM</td>
+                                <td class="log-message">Launching URL Is ==> https://google.com</td>
+                            </tr>
+                        
+                            <tr class="log-entry info" data-level="INFO">
+                                <td class="log-level">
+                                    <span class="level-badge info">INFO</span>
+                                </td>
+                                <td class="log-timestamp">06:03:49 AM</td>
+                                <td class="log-message">Title Of The Page Is ==> Google</td>
+                            </tr>
+                        
+                            <tr class="log-entry info" data-level="INFO">
+                                <td class="log-level">
+                                    <span class="level-badge info">INFO</span>
+                                </td>
+                                <td class="log-timestamp">06:03:49 AM</td>
+                                <td class="log-message">Redirected URL Is ==> https://www.google.com/</td>
+                            </tr>
+                        
+                            <tr class="log-entry info" data-level="INFO">
+                                <td class="log-level">
+                                    <span class="level-badge info">INFO</span>
+                                </td>
+                                <td class="log-timestamp">06:03:49 AM</td>
+                                <td class="log-message">Time Taken to Launch Application - https://google.com ==> 6027.82 Milliseconds</td>
+                            </tr>
+                        
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+            
+                <div class="screenshot-section">
+                    <h3>Screenshot</h3>
+                    <div class="screenshot-container">
+                        <button id="screenshot-btn-0" 
+                                onclick="toggleScreenshot(0)" 
+                                class="screenshot-btn">
+                            <i class="fas fa-image"></i> Show Screenshot
+                        </button>
+                        <div id="screenshot-container-0" class="screenshot-wrapper" style="display: none;">
+            
+                                <div class="no-screenshot">
+                                    <i class="fas fa-image-slash"></i>
+                                    <p>No screenshot available</p>
+                                </div>
+                
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+                <div id="content-1" class="url-content" style="display: none;">
+                    <div class="logs-section">
+                        <div class="log-container">
+                            <div class="log-table-container">
+                                <table class="log-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Status</th>
+                                            <th>Timestamp</th>
+                                            <th>Details</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+            
+                            <tr class="log-entry pass" data-level="PASS">
+                                <td class="log-level">
+                                    <span class="level-badge pass">PASS</span>
+                                </td>
+                                <td class="log-timestamp">06:03:58 AM</td>
+                                <td class="log-message">Launching URL Is ==> https://httpstat.us/403</td>
+                            </tr>
+                        
+                            <tr class="log-entry info" data-level="INFO">
+                                <td class="log-level">
+                                    <span class="level-badge info">INFO</span>
+                                </td>
+                                <td class="log-timestamp">06:04:01 AM</td>
+                                <td class="log-message">Title Of The Page Is ==> </td>
+                            </tr>
+                        
+                            <tr class="log-entry info" data-level="INFO">
+                                <td class="log-level">
+                                    <span class="level-badge info">INFO</span>
+                                </td>
+                                <td class="log-timestamp">06:04:01 AM</td>
+                                <td class="log-message">Redirected URL Is ==> https://httpstat.us/403</td>
+                            </tr>
+                        
+                            <tr class="log-entry info" data-level="INFO">
+                                <td class="log-level">
+                                    <span class="level-badge info">INFO</span>
+                                </td>
+                                <td class="log-timestamp">06:04:01 AM</td>
+                                <td class="log-message">Time Taken to Launch Application - https://httpstat.us/403 ==> 3764.25 Milliseconds</td>
+                            </tr>
+                        
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+            
+                <div class="screenshot-section">
+                    <h3>Screenshot</h3>
+                    <div class="screenshot-container">
+                        <button id="screenshot-btn-1" 
+                                onclick="toggleScreenshot(1)" 
+                                class="screenshot-btn">
+                            <i class="fas fa-image"></i> Show Screenshot
+                        </button>
+                        <div id="screenshot-container-1" class="screenshot-wrapper" style="display: none;">
+            
+                                <div class="no-screenshot">
+                                    <i class="fas fa-image-slash"></i>
+                                    <p>No screenshot available</p>
+                                </div>
+                
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+                <div id="content-2" class="url-content" style="display: none;">
+                    <div class="logs-section">
+                        <div class="log-container">
+                            <div class="log-table-container">
+                                <table class="log-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Status</th>
+                                            <th>Timestamp</th>
+                                            <th>Details</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+            
+                            <tr class="log-entry fail" data-level="FAIL">
+                                <td class="log-level">
+                                    <span class="level-badge fail">FAIL</span>
+                                </td>
+                                <td class="log-timestamp">06:04:10 AM</td>
+                                <td class="log-message">Launching URL Is ==> https://msess.gov.pt</td>
+                            </tr>
+                        
+                        <tr class="log-entry fail" data-level="FAIL">
+                            <td class="log-level">
+                                <span class="level-badge fail">FAIL</span>
+                            </td>
+                            <td class="log-timestamp">06:04:10 AM</td>
+                            <td class="log-message">Message: unknown error: net::ERR_NAME_NOT_RESOLVED
+  (Session info: chrome=130.0.6723.119)
+Stacktrace:
+	GetHandleVerifier [0x00E038B3+24035]
+	(No symbol) [0x00D8BC44]
+	(No symbol) [0x00C6C2D3]
+	(No symbol) [0x00C6A0F9]
+	(No symbol) [0x00C5DED8]
+	(No symbol) [0x00C5F80B]
+	(No symbol) [0x00C5E127]
+	(No symbol) [0x00C5DACC]
+	(No symbol) [0x00C5D9F8]
+	(No symbol) [0x00C5BE67]
+	(No symbol) [0x00C5C3EB]
+	(No symbol) [0x00C6ECAE]
+	(No symbol) [0x00CEA017]
+	(No symbol) [0x00CCFE8C]
+	(No symbol) [0x00CE953F]
+	(No symbol) [0x00CCFC26]
+	(No symbol) [0x00CA218C]
+	(No symbol) [0x00CA310D]
+	GetHandleVerifier [0x010A96D3+2800643]
+	GetHandleVerifier [0x0110428E+3172286]
+	GetHandleVerifier [0x010FCEA2+3142610]
+	GetHandleVerifier [0x00EA6C60+692624]
+	(No symbol) [0x00D94C5D]
+	(No symbol) [0x00D91968]
+	(No symbol) [0x00D91B00]
+	(No symbol) [0x00D83FB0]
+	BaseThreadInitThunk [0x76417BA9+25]
+	RtlInitializeExceptionChain [0x7710C0CB+107]
+	RtlClearBits [0x7710C04F+191]
+</td>
+                        </tr>
+                    
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+            
+                <div class="screenshot-section">
+                    <h3>Screenshot</h3>
+                    <div class="screenshot-container">
+                        <button id="screenshot-btn-2" 
+                                onclick="toggleScreenshot(2)" 
+                                class="screenshot-btn">
+                            <i class="fas fa-image"></i> Show Screenshot
+                        </button>
+                        <div id="screenshot-container-2" class="screenshot-wrapper" style="display: none;">
+            
+                                <div class="no-screenshot">
+                                    <i class="fas fa-image-slash"></i>
+                                    <p>No screenshot available</p>
+                                </div>
+                
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+                <div id="content-3" class="url-content" style="display: none;">
+                    <div class="logs-section">
+                        <div class="log-container">
+                            <div class="log-table-container">
+                                <table class="log-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Status</th>
+                                            <th>Timestamp</th>
+                                            <th>Details</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+            
+                            <tr class="log-entry pass" data-level="PASS">
+                                <td class="log-level">
+                                    <span class="level-badge pass">PASS</span>
+                                </td>
+                                <td class="log-timestamp">06:04:20 AM</td>
+                                <td class="log-message">Launching URL Is ==> https://expired.badssl.com/</td>
+                            </tr>
+                        
+                            <tr class="log-entry info" data-level="INFO">
+                                <td class="log-level">
+                                    <span class="level-badge info">INFO</span>
+                                </td>
+                                <td class="log-timestamp">06:04:23 AM</td>
+                                <td class="log-message">Title Of The Page Is ==> expired.badssl.com</td>
+                            </tr>
+                        
+                            <tr class="log-entry info" data-level="INFO">
+                                <td class="log-level">
+                                    <span class="level-badge info">INFO</span>
+                                </td>
+                                <td class="log-timestamp">06:04:23 AM</td>
+                                <td class="log-message">Redirected URL Is ==> https://expired.badssl.com/</td>
+                            </tr>
+                        
+                            <tr class="log-entry info" data-level="INFO">
+                                <td class="log-level">
+                                    <span class="level-badge info">INFO</span>
+                                </td>
+                                <td class="log-timestamp">06:04:23 AM</td>
+                                <td class="log-message">Time Taken to Launch Application - https://expired.badssl.com/ ==> 3977.73 Milliseconds</td>
+                            </tr>
+                        
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+            
+                <div class="screenshot-section">
+                    <h3>Screenshot</h3>
+                    <div class="screenshot-container">
+                        <button id="screenshot-btn-3" 
+                                onclick="toggleScreenshot(3)" 
+                                class="screenshot-btn">
+                            <i class="fas fa-image"></i> Show Screenshot
+                        </button>
+                        <div id="screenshot-container-3" class="screenshot-wrapper" style="display: none;">
+            
+                                <div class="no-screenshot">
+                                    <i class="fas fa-image-slash"></i>
+                                    <p>No screenshot available</p>
+                                </div>
+                
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+                <div id="content-4" class="url-content" style="display: none;">
+                    <div class="logs-section">
+                        <div class="log-container">
+                            <div class="log-table-container">
+                                <table class="log-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Status</th>
+                                            <th>Timestamp</th>
+                                            <th>Details</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+            
+                    <tr class="log-entry skip" data-level="SKIP">
+                        <td class="log-level">
+                            <span class="level-badge warning">WARNING</span>
+                        </td>
+                        <td class="log-timestamp">06:04:31 AM</td>
+                        <td class="log-message">
+                            <span class="paloalto-message">Page is Blocked By PaloAlto</span>
+                        </td>
+                    </tr>
+                
+                        <tr class="log-entry warning" data-level="WARNING">
+                            <td class="log-level">
+                                <span class="level-badge warning">Warning</span>
+                            </td>
+                            <td class="log-timestamp">06:04:31 AM</td>
+                            <td class="log-message">Launching URL Is ==> https://ceas.sase.responses.es.oneadp.com</td>
+                        </tr>
+                    
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+            
+                <div class="screenshot-section">
+                    <h3>Screenshot</h3>
+                    <div class="screenshot-container">
+                        <button id="screenshot-btn-4" 
+                                onclick="toggleScreenshot(4)" 
+                                class="screenshot-btn">
+                            <i class="fas fa-image"></i> Show Screenshot
+                        </button>
+                        <div id="screenshot-container-4" class="screenshot-wrapper" style="display: none;">
+            
+                                <div class="no-screenshot">
+                                    <i class="fas fa-image-slash"></i>
+                                    <p>No screenshot available</p>
+                                </div>
+                
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+                <div id="content-5" class="url-content" style="display: none;">
+                    <div class="logs-section">
+                        <div class="log-container">
+                            <div class="log-table-container">
+                                <table class="log-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Status</th>
+                                            <th>Timestamp</th>
+                                            <th>Details</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+            
+                            <tr class="log-entry pass" data-level="PASS">
+                                <td class="log-level">
+                                    <span class="level-badge pass">PASS</span>
+                                </td>
+                                <td class="log-timestamp">06:04:34 AM</td>
+                                <td class="log-message">Launching URL Is ==> https://slow.badssl.com</td>
+                            </tr>
+                        
+                            <tr class="log-entry info" data-level="INFO">
+                                <td class="log-level">
+                                    <span class="level-badge info">INFO</span>
+                                </td>
+                                <td class="log-timestamp">06:04:37 AM</td>
+                                <td class="log-message">Title Of The Page Is ==> slow.badssl.com</td>
+                            </tr>
+                        
+                            <tr class="log-entry info" data-level="INFO">
+                                <td class="log-level">
+                                    <span class="level-badge info">INFO</span>
+                                </td>
+                                <td class="log-timestamp">06:04:37 AM</td>
+                                <td class="log-message">Redirected URL Is ==> https://slow.badssl.com/</td>
+                            </tr>
+                        
+                            <tr class="log-entry info" data-level="INFO">
+                                <td class="log-level">
+                                    <span class="level-badge info">INFO</span>
+                                </td>
+                                <td class="log-timestamp">06:04:37 AM</td>
+                                <td class="log-message">Time Taken to Launch Application - https://slow.badssl.com ==> 3818.09 Milliseconds</td>
+                            </tr>
+                        
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+            
+                <div class="screenshot-section">
+                    <h3>Screenshot</h3>
+                    <div class="screenshot-container">
+                        <button id="screenshot-btn-5" 
+                                onclick="toggleScreenshot(5)" 
+                                class="screenshot-btn">
+                            <i class="fas fa-image"></i> Show Screenshot
+                        </button>
+                        <div id="screenshot-container-5" class="screenshot-wrapper" style="display: none;">
+            
+                                <div class="no-screenshot">
+                                    <i class="fas fa-image-slash"></i>
+                                    <p>No screenshot available</p>
+                                </div>
+                
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+                                        </div>
+                                    </div>
+                                </div>
+                                <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const modal = document.createElement('div');
+                    modal.className = 'screenshot-modal';
+                    modal.innerHTML = `
+                        <span class="close-modal">&times;</span>
+                        <img src="" alt="Full Screen Screenshot">
+                    `;
+                    document.body.appendChild(modal);
+
+                    modal.addEventListener('click', function(e) {
+                        if (e.target === modal || e.target.className === 'close-modal') {
+                            modal.classList.remove('active');
+                        }
+                    });
+
+                    document.addEventListener('keydown', function(e) {
+                        if (e.key === 'Escape') {
+                            modal.classList.remove('active');
+                        }
+                    });
+                });
+
+                function toggleScreenshot(index) {
+                    const container = document.getElementById(`screenshot-container-${index}`);
+                    const button = document.getElementById(`screenshot-btn-${index}`);
+
+                    if (container && button) {
+                        if (container.style.display === 'none') {
+                            container.style.display = 'block';
+                            button.innerHTML = '<i class="fas fa-times"></i> Hide Screenshot';
+                            button.classList.add('active');
+                            button.style.backgroundColor = '#dc3545';
+                        } else {
+                            container.style.display = 'none';
+                            button.innerHTML = '<i class="fas fa-image"></i> Show Screenshot';
+                            button.classList.remove('active');
+                            button.style.backgroundColor = '#2196f3';
+                        }
+                    }
+                }
+
+                function showFullScreenImage(img) {
+                    const modal = document.querySelector('.screenshot-modal');
+                    const modalImg = modal.querySelector('img');
+                    modalImg.src = img.src;
+                    modal.classList.add('active');
+                }
+
+                function filterItems() {
+                    const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+                    const urlItems = document.querySelectorAll('.url-item');
+
+                    urlItems.forEach(item => {
+                        const statusBadge = item.querySelector('.status-badge');
+                        const status = statusBadge ? statusBadge.textContent.trim().toLowerCase() : '';
+
+                        if (statusFilter === 'all' || status === statusFilter) {
+                            item.style.display = 'block';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                }
+
+                function resetFilters() {
+                    document.getElementById('statusFilter').value = 'all';
+                    const urlItems = document.querySelectorAll('.url-item');
+                    urlItems.forEach(item => {
+                        item.style.display = 'block';
+                    });
+                }
+
+                function showContent(index) {
+                    document.querySelectorAll('.url-content').forEach(content => {
+                        content.style.display = 'none';
+                    });
+
+                    const selectedContent = document.getElementById(`content-${index}`);
+                    if (selectedContent) {
+                        selectedContent.style.display = 'block';
+                    }
+
+                    document.querySelectorAll('.url-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+
+                    const selectedItem = document.querySelector(`[onclick="showContent(${index})"]`);
+                    if (selectedItem) {
+                        selectedItem.classList.add('active');
+                    }
+                }
+
+                window.onload = function() {
+                    const firstItem = document.querySelector('.url-item');
+                    if (firstItem) {
+                        firstItem.click();
+                    }
+
+                    // Initialize modal with zoom effect
+                    const modal = document.querySelector('.screenshot-modal');
+                    if (modal) {
+                        const modalImg = modal.querySelector('img');
+                        modalImg.style.transform = 'scale(0.9)';
+                        modalImg.style.transition = 'transform 0.3s ease';
+
+                        modal.addEventListener('click', function(e) {
+                            if (e.target === modal) {
+                                modal.classList.remove('active');
+                            }
+                        });
+
+                        const closeBtn = modal.querySelector('.close-modal');
+                        if (closeBtn) {
+                            closeBtn.addEventListener('click', function() {
+                                modal.classList.remove('active');
+                            });
+                        }
+
+                        modal.addEventListener('transitionend', function() {
+                            if (!modal.classList.contains('active')) {
+                                modalImg.style.transform = 'scale(0.9)';
+                            }
+                        });
+
+                        modal.addEventListener('click', function(e) {
+                            if (e.target === modal || e.target.className === 'close-modal') {
+                                modal.classList.remove('active');
+                            }
+                        });
+                    }
+                };
+
+                // Add keyboard navigation
+                document.addEventListener('keydown', function(e) {
+                    const urlItems = Array.from(document.querySelectorAll('.url-item'));
+                    const activeItem = document.querySelector('.url-item.active');
+
+                    if (!activeItem) return;
+
+                    const currentIndex = urlItems.indexOf(activeItem);
+                    let nextIndex;
+
+                    if (e.key === 'ArrowDown') {
+                        nextIndex = Math.min(currentIndex + 1, urlItems.length - 1);
+                        urlItems[nextIndex].click();
+                        urlItems[nextIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    } else if (e.key === 'ArrowUp') {
+                        nextIndex = Math.max(currentIndex - 1, 0);
+                        urlItems[nextIndex].click();
+                        urlItems[nextIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                });
+
+                // Custom scroll behavior for log table
+                document.querySelectorAll('.log-table-container').forEach(container => {
+                    container.addEventListener('wheel', function(e) {
+                        if (e.deltaY !== 0) {
+                            e.preventDefault();
+                            this.scrollTop += e.deltaY;
+                        }
+                    });
+                });
+            </script>
+                            </body>
+                            </html>
+                        
