@@ -21,7 +21,6 @@ from openpyxl.styles import PatternFill
 import base64
 from report_handler import ReportHandler
 
-
 class URLValidator:
     # Define blocked URLs as class variables
     BLOCKED_URLS = [
@@ -230,7 +229,7 @@ class URLValidator:
                 screenshot = driver.get_screenshot_as_png()
                 driver.execute_script("document.body.style.overflow = '';")
                 if screenshot:
-                    log_step('SUCCESS', f"Screenshot captured successfully{attempt_number}")
+                    #log_step('SUCCESS', f"Screenshot captured successfully{attempt_number}")
                     return base64.b64encode(screenshot).decode('utf-8')
                 log_step('WARNING', f"Screenshot capture returned no data{attempt_number}")
                 return None
@@ -240,6 +239,7 @@ class URLValidator:
 
         result = {
             'url': url,
+            'formatted_url': URLValidator.format_url(url),
             'status': None,
             'category': 'ERROR',
             'load_time': 0,
@@ -251,35 +251,58 @@ class URLValidator:
         }
 
         try:
-            # Check if URL is in blocked URLs list
-            if any(blocked_url in url.lower() for blocked_url in URLValidator.BLOCKED_URLS):
-                result.update({
-                    'status': 'Warning',
-                    'error': "Page Is Blocked By PaloAlto",
-                    'category': 'WARNING',
-                    'test_logs': test_logs
-                })
-                return result
-
             formatted_url = URLValidator.format_url(url)
             driver = URLValidator.create_web_driver()
 
             try:
+                # For blocked URLs
+                if any(blocked_url in url.lower() for blocked_url in URLValidator.BLOCKED_URLS):
+                    try:
+                        driver.get(formatted_url)
+                    except:
+                        pass  # Continue even if the page load fails
+
+                    # Always try to capture screenshot
+                    screenshot_base64 = capture_screenshot(driver)
+                    if screenshot_base64:
+                        result['screenshot_base64'] = screenshot_base64
+
+                    end_time = time.time()
+                    load_time = (end_time - start_time) * 1000
+
+                    log_step('WARNING', f"Launching URL Is ==> {url}")
+                    log_step('WARNING', "Page Is Blocked By PaloAlto")
+                    log_step('INFO', f"Time Taken ==> {load_time:.2f} Milliseconds")
+
+                    result.update({
+                        'status': 'Warning',
+                        'error': "Page Is Blocked By PaloAlto",
+                        'category': 'WARNING',
+                        'load_time': round(load_time, 2),
+                        'test_logs': test_logs
+                    })
+                    return result
+
+                # For non-blocked URLs
                 log_step('INFO', f"Launching URL Is ==> {formatted_url}")
                 driver.get(formatted_url)
-                time.sleep(2)
+                driver_end_time = time.time()
+                load_time = (driver_end_time - start_time) * 1000
 
-                # First screenshot attempt
-                screenshot_base64 = capture_screenshot(driver, " (first attempt)")
+                # Always try to capture screenshot
+                screenshot_base64 = capture_screenshot(driver)
                 if screenshot_base64:
                     result['screenshot_base64'] = screenshot_base64
 
                 if not URLValidator.is_valid_url(url):
+                    end_time = time.time()
+                    load_time = (end_time - start_time) * 1000
                     result.update({
                         'status': 'Failed',
                         'error': "Invalid URL format",
                         'category': 'ERROR',
-                        'test_logs': test_logs
+                        'test_logs': test_logs,
+                        'load_time': round(load_time, 2)
                     })
                     return result
 
@@ -293,36 +316,40 @@ class URLValidator:
 
                 # Check page status
                 status_result = URLValidator.check_url_status(driver)
+                status_result['load_time'] = round(load_time, 2)
+                status_result['screenshot_base64'] = result.get('screenshot_base64')  # Preserve the screenshot
                 result.update(status_result)
-                result['load_time'] = round(load_time, 2)
-
-                # Final screenshot attempt if still missing
-                if not result.get('screenshot_base64'):
-                    screenshot_base64 = capture_screenshot(driver, " (final attempt)")
-                    if screenshot_base64:
-                        result['screenshot_base64'] = screenshot_base64
 
             except Exception as e:
+                # Try to capture screenshot even if there's an error
+                screenshot_base64 = capture_screenshot(driver)
+                if screenshot_base64:
+                    result['screenshot_base64'] = screenshot_base64
+
+                end_time = time.time()
+                load_time = (end_time - start_time) * 1000
                 result.update({
                     'status': 'Failed',
                     'error': str(e),
                     'category': 'ERROR',
+                    'load_time': round(load_time, 2)
                 })
 
-                # Try to capture error state screenshot
-                if not result.get('screenshot_base64'):
-                    screenshot_base64 = capture_screenshot(driver, " (error state)")
-                    if screenshot_base64:
-                        result['screenshot_base64'] = screenshot_base64
-
         except Exception as e:
+            end_time = time.time()
+            load_time = (end_time - start_time) * 1000
             result.update({
                 'status': 'Failed',
                 'error': str(e),
                 'category': 'ERROR',
+                'load_time': round(load_time, 2)
             })
 
         finally:
+            if result['load_time'] == 0:
+                end_time = time.time()
+                result['load_time'] = round((end_time - start_time) * 1000, 2)
+
             result['test_logs'] = test_logs
             if driver:
                 try:
@@ -385,13 +412,15 @@ class URLValidator:
                 )
 
         except Exception as e:
+            duration = time.time() * 1000
             logging.error(f"Error in check_url_status: {str(e)}")
             return ReportHandler.format_validation_result(
                 url=current_url if 'current_url' in locals() else "Unknown URL",
                 status='Failed',
                 title="Error",
                 redirected_url="",
-                duration=0,
+                #duration=0,
+                duration=duration,
                 error=str(e),
                 category='SYSTEM_ERROR'
             )
@@ -462,14 +491,31 @@ class URLValidator:
 
             URLValidator.backup_previous_excel()
 
-            data = [{
-                'URL': result['url'],
-                'Status': result['status'],
-                'Load Time (ms)': round(result.get('load_time', 0), 2),
-                'Error/Warning': result.get('error', '')
-            } for result in results]
+            data = []
+            for result in results:
+                load_time = result.get('load_time', 0)
+                # Convert to float and ensure it's not None
+                if load_time is None:
+                    load_time = 0.0
+                elif isinstance(load_time, str):
+                    try:
+                        load_time = float(load_time)
+                    except (ValueError, TypeError):
+                        load_time = 0.0
+
+                row = {
+                    'URL': result.get('formatted_url', result['url']),
+                    'Status': result['status'],
+                    'Load Time (ms)': f"{float(load_time):.2f}",  # Format as string with 2 decimal places
+                    #'Error/Warning': result.get('error', '')
+                }
+                data.append(row)
 
             df = pd.DataFrame(data)
+
+            # Convert load time to numeric and format
+            df['Load Time (ms)'] = pd.to_numeric(df['Load Time (ms)'], errors='coerce').fillna(0)
+
             os.makedirs(paths["output_excel"], exist_ok=True)
             output_path = os.path.join(paths["output_excel"], "URL-Validation-Report.xlsx")
 
@@ -478,6 +524,11 @@ class URLValidator:
                     df.to_excel(writer, index=False)
                     workbook = writer.book
                     worksheet = writer.sheets['Sheet1']
+
+                    # Format the Load Time column
+                    for row in range(2, len(df) + 2):
+                        cell = worksheet.cell(row=row, column=3)  # Load Time column
+                        cell.number_format = '0.00'  # Force 2 decimal places
 
                     # Define styles for different statuses
                     success_fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')
