@@ -5,6 +5,20 @@ import shutil
 import logging
 from datetime import datetime
 
+# Global status variables - matching with URL_validator.py
+STATUS_SUCCESS = "Success"
+STATUS_FAILED = "Failed"
+STATUS_WARNING = "Warning"
+STATUS_SKIP = "Skip"
+
+# Level Variables - DISPLAY in LOGS
+LEVEL_PASS = "PASS"
+LEVEL_FAIL = "FAIL"
+LEVEL_WARNING = "WARNING"
+LEVEL_SKIP = "SKIP"
+LEVEL_ERROR = "ERROR"
+LEVEL_INFO = "INFO"
+
 class ReportHandler:
     @staticmethod
     def get_project_paths():
@@ -52,10 +66,10 @@ class ReportHandler:
     def calculate_stats(results):
         """Calculate test statistics"""
         total = len(results)
-        passed = sum(1 for r in results if r['status'] == 'Success')
-        failed = sum(1 for r in results if r['status'] == 'Failed')
-        warnings = sum(1 for r in results if r['status'] == 'Warning')
-        skipped = sum(1 for r in results if r['status'] == 'Skip')
+        passed = sum(1 for r in results if r['status'] == STATUS_SUCCESS)
+        failed = sum(1 for r in results if r['status'] == STATUS_FAILED)
+        warnings = sum(1 for r in results if r['status'] == STATUS_WARNING)
+        skipped = sum(1 for r in results if r['status'] == STATUS_SKIP)
 
         effective_total = total - skipped
         pass_rate = (passed / effective_total * 100) if effective_total > 0 else 0
@@ -88,70 +102,70 @@ class ReportHandler:
         result = {
             'url': url,
             'status': status,
-            'category': category if category else ('ERROR' if status == 'Failed' else 'SUCCESS'),
+            'category': category if category else (LEVEL_ERROR if status == STATUS_FAILED else STATUS_SUCCESS),
             'load_time': round(duration, 2),
             'test_logs': []
         }
 
-        if status == 'Warning':
+        if status == STATUS_WARNING:
             log_entries = [
                 {
                     'timestamp': timestamp,
-                    'level': 'WARNING',
+                    'level': LEVEL_WARNING,
                     'message': f"Launching URL Is ==> {url}"
                 },
                 {
                     'timestamp': timestamp,
-                    'level': 'WARNING',
+                    'level': LEVEL_WARNING,
                     'message': "Page Is Blocked By PaloAlto"
                 }
             ]
-        elif status == 'Skip':
+        elif status == STATUS_SKIP:
             log_entries = [
                 {
                     'timestamp': timestamp,
-                    'level': 'SKIP',
+                    'level': LEVEL_SKIP,
                     'message': f"Launching URL Is ==> {url}"
                 },
                 {
                     'timestamp': timestamp,
-                    'level': 'SKIP',
+                    'level': LEVEL_SKIP,
                     'message': "Web Access Blocked"
                 }
             ]
-        elif status == 'Failed':
+        elif status == STATUS_FAILED:
             log_entries = [
                 {
                     'timestamp': timestamp,
-                    'level': 'FAIL',
+                    'level': LEVEL_FAIL,
                     'message': f"Launching URL Is ==> {url}"
                 },
                 {
                     'timestamp': timestamp,
-                    'level': 'FAIL',
+                    'level': LEVEL_FAIL,
                     'message': "Page is failing"
                 }
             ]
-        else:
+        else:  # SUCCESS case
             log_entries = [
                 {
                     'timestamp': timestamp,
-                    'level': 'PASS',
+                    'level': LEVEL_PASS,
                     'message': f"Launching URL Is ==> {url}"
                 },
                 {
                     'timestamp': timestamp,
-                    'level': 'INFO',
+                    'level': LEVEL_INFO,
                     'message': f"Title Of The Page Is ==> {title}"
                 },
                 {
                     'timestamp': timestamp,
-                    'level': 'INFO',
+                    'level': LEVEL_INFO,
                     'message': f"Redirected URL Is ==> {redirected_url}"
                 },
                 {
                     'timestamp': timestamp,
-                    'level': 'INFO',
+                    'level': LEVEL_INFO,
                     'message': f"Time Taken to Launch Application - {url} is ==> {duration:.2f} Milliseconds"
                 }
             ]
@@ -173,72 +187,43 @@ class ReportHandler:
                     return timestamp
 
             content = f"""
-                <div id="content-{index}" class="url-content" style="display: none;">
-                    <div class="logs-section">
-                        <div class="log-container">
-                            <div class="log-table-container">
-                                <table class="log-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Status</th>
-                                            <th>Timestamp</th>
-                                            <th>Details</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-            """
-
-            if result['status'] == 'Warning':
-                timestamp = next(
-                    (log['timestamp'].split()[1] for log in result.get('test_logs', []) if log.get('timestamp')), '')
-                content += f"""
-                    <tr class="log-entry skip" data-level="SKIP">
-                        <td class="log-level">
-                            <span class="level-badge warning">WARNING</span>
-                        </td>
-                        <td class="log-timestamp">{format_timestamp(timestamp)}</td>
-                        <td class="log-message">
-                            <span class="paloalto-message">Page is Blocked By PaloAlto</span>
-                        </td>
-                    </tr>
-                """
-
-                launch_log = next((log for log in result.get('test_logs', [])
-                                   if "Launching URL Is ==>" in log.get('message', '')), None)
-                if launch_log:
-                    content += f"""
-                        <tr class="log-entry warning" data-level="WARNING">
-                            <td class="log-level">
-                                <span class="level-badge warning">Warning</span>
-                            </td>
-                            <td class="log-timestamp">{format_timestamp(launch_log['timestamp'].split()[1])}</td>
-                            <td class="log-message">{launch_log['message']}</td>
-                        </tr>
+                        <div id="content-{index}" class="url-content" style="display: none;">
+                            <div class="logs-section">
+                                <div class="log-container">
+                                    <div class="log-table-container">
+                                        <table class="log-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Status</th>
+                                                    <th>Timestamp</th>
+                                                    <th>Details</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
                     """
-            else:
-                for log in result.get('test_logs', []):
-                    message = log.get('message', '')
-                    if any(msg in message for msg in [
-                        "Launching URL Is ==>",
-                        "Title Of The Page Is ==>",
-                        "Redirected URL Is ==>",
-                        "Time Taken to Launch Application"
-                    ]):
-                        level = log.get('level', 'INFO')
 
-                        if "Launching URL Is ==>" in message:
-                            if result['status'] == 'Failed':
-                                level = 'FAIL'
-                            elif result['status'] == 'Warning':
-                                level = 'WARNING'
-                            elif result['status'] == 'Success':
-                                level = 'PASS'
-                            elif result['status'] == 'Skip':
-                                level = 'SKIP'
+            for log in result.get('test_logs', []):
+                message = log.get('message', '')
 
-                        timestamp = log['timestamp'].split()[1] if log.get('timestamp') else ''
-                        level_class = level.lower()
-                        content += f"""
+                # Skip Message row for Failed status
+                if result['status'] == STATUS_FAILED and 'Message:' in message:
+                    continue
+
+                level = log.get('level', LEVEL_INFO)
+                if "Launching URL Is ==>" in message:
+                    if result['status'] == STATUS_FAILED:
+                        level = LEVEL_FAIL
+                    elif result['status'] == STATUS_WARNING:
+                        level = LEVEL_WARNING
+                    elif result['status'] == STATUS_SUCCESS:
+                        level = LEVEL_PASS
+                    elif result['status'] == STATUS_SKIP:
+                        level = LEVEL_SKIP
+
+                timestamp = log['timestamp'].split()[1] if log.get('timestamp') else ''
+                level_class = level.lower()
+
+                content += f"""
                             <tr class="log-entry {level_class}" data-level="{level}">
                                 <td class="log-level">
                                     <span class="level-badge {level_class}">{level}</span>
@@ -247,20 +232,6 @@ class ReportHandler:
                                 <td class="log-message">{message}</td>
                             </tr>
                         """
-
-                if result['status'] in ['Failed', 'Warning'] and result.get('error'):
-                    timestamp = next((log.get('timestamp', '').split()[1] for log in result.get('test_logs', [])
-                                      if log.get('timestamp')), '')
-                    level = 'WARNING' if result['status'] == 'Warning' else 'FAIL'
-                    content += f"""
-                        <tr class="log-entry {level.lower()}" data-level="{level}">
-                            <td class="log-level">
-                                <span class="level-badge {level.lower()}">{level}</span>
-                            </td>
-                            <td class="log-timestamp">{format_timestamp(timestamp)}</td>
-                            <td class="log-message">{result['error']}</td>
-                        </tr>
-                    """
 
             content += """
                                     </tbody>
@@ -1234,7 +1205,7 @@ class ReportHandler:
                     <li class="url-item {result['status'].lower()}" onclick="showContent({i})">
                         <div class="url-item-content">
                             <div class="url-header">
-                                <div class="url-title">Validating URL: <b>{result['url']}</b></div>
+                                <div class="url-title">Validating URL: <b>{result.get('formatted_url', result['url'])}</b></div>
                                 <div class="status-container">
                                     <span class="status-badge {result['status'].lower()}">{result['status']}</span>
                                 </div>
