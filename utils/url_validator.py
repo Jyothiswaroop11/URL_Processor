@@ -398,7 +398,27 @@ class URLValidator:
                     redirected_url=current_url,
                     duration=duration,
                     error='Page Is Blocked By PaloAlto',
-                    category='WARNING'
+                    category='BLOCKED-PAGE'
+                )
+            elif "this page isn't working" in page_source:
+                return ReportHandler.format_validation_result(
+                    url=current_url,
+                    status='Failed',
+                    title=page_title,
+                    redirected_url=current_url,
+                    duration=duration,
+                    error='Page is failing',
+                    category='ERROR'
+                )
+            elif "web - access blocked" in page_source:
+                return ReportHandler.format_validation_result(
+                    url=current_url,
+                    status='Skip',
+                    title=page_title,
+                    redirected_url=current_url,
+                    duration=duration,
+                    error='Web Access Blocked',
+                    category='SKIP'
                 )
             else:
                 return ReportHandler.format_validation_result(
@@ -408,19 +428,17 @@ class URLValidator:
                     redirected_url=current_url,
                     duration=duration,
                     error=None,
-                    category='SUCCESS'
+                    category='PASSED'
                 )
 
         except Exception as e:
-            duration = time.time() * 1000
             logging.error(f"Error in check_url_status: {str(e)}")
             return ReportHandler.format_validation_result(
                 url=current_url if 'current_url' in locals() else "Unknown URL",
                 status='Failed',
                 title="Error",
                 redirected_url="",
-                #duration=0,
-                duration=duration,
+                duration=0,
                 error=str(e),
                 category='SYSTEM_ERROR'
             )
