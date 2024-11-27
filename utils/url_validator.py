@@ -21,6 +21,20 @@ from openpyxl.styles import PatternFill
 import base64
 from report_handler import ReportHandler
 
+# Global status variables - STATUS
+STATUS_SUCCESS = "Success"
+STATUS_FAILED = "Failed"
+STATUS_WARNING = "Warning"
+STATUS_SKIP = "Skip"
+
+# Level Variables - DISPLAY in LOGS
+LEVEL_PASS = "PASS"
+LEVEL_FAIL = "FAIL"
+LEVEL_WARNING = "WARNING"
+LEVEL_SKIP = "SKIP"
+LEVEL_ERROR = "ERROR"
+LEVEL_INFO = "INFO"
+
 class URLValidator:
     # Define blocked URLs as class variables
     BLOCKED_URLS = [
@@ -183,6 +197,241 @@ class URLValidator:
             logging.error(f"Error creating WebDriver: {str(e)}")
             raise
 
+    # @staticmethod
+    # def process_url(url, row_number, config):
+    #     """Process a single URL and return results"""
+    #     start_time = time.time()
+    #     driver = None
+    #     test_logs = []
+    #
+    #     def log_step(level, message, symbol="●"):
+    #         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    #
+    #         if "Launching URL Is ==>" in message:
+    #             if result.get('status') == STATUS_SUCCESS:
+    #                 level = LEVEL_PASS
+    #             elif result.get('status') == STATUS_FAILED:
+    #                 level = LEVEL_FAIL
+    #             elif result.get('status') == STATUS_WARNING:
+    #                 level = LEVEL_WARNING
+    #             elif result.get('status') == STATUS_SKIP:
+    #                 level = LEVEL_SKIP
+    #
+    #         log_entry = {
+    #             'timestamp': timestamp,
+    #             'level': level,
+    #             'message': message
+    #         }
+    #         test_logs.append(log_entry)
+    #
+    #         if level in [LEVEL_ERROR, LEVEL_FAIL, STATUS_FAILED]:
+    #             print(f"{Fore.RED}✗ [{timestamp}] {message}{Style.RESET_ALL}")
+    #         elif level in [LEVEL_WARNING, STATUS_WARNING]:
+    #             print(f"{Fore.YELLOW}⚠ [{timestamp}] {message}{Style.RESET_ALL}")
+    #         elif level in [STATUS_SUCCESS, LEVEL_PASS]:
+    #             print(f"{Fore.GREEN}✓ [{timestamp}] {message}{Style.RESET_ALL}")
+    #         elif level in [LEVEL_SKIP, STATUS_SKIP]:
+    #             print(f"{Fore.BLUE}○ [{timestamp}] {message}{Style.RESET_ALL}")
+    #         else:
+    #             print(f"{Fore.CYAN}{symbol} [{timestamp}] {message}{Style.RESET_ALL}")
+    #
+    #     def capture_screenshot(driver, attempt_number=""):
+    #         """Helper function to capture screenshot with logging"""
+    #         try:
+    #             time.sleep(2)
+    #             driver.execute_script("document.body.style.overflow = 'hidden';")
+    #             screenshot = driver.get_screenshot_as_png()
+    #             driver.execute_script("document.body.style.overflow = '';")
+    #             if screenshot:
+    #                 return base64.b64encode(screenshot).decode('utf-8')
+    #             log_step('WARNING', f"Screenshot capture returned no data{attempt_number}")
+    #             return None
+    #         except Exception as e:
+    #             log_step('WARNING', f"Screenshot capture failed{attempt_number}: {str(e)}")
+    #             return None
+    #
+    #     result = {
+    #         'url': url,
+    #         'formatted_url': URLValidator.format_url(url),
+    #         'status': None,
+    #         'category': 'ERROR',
+    #         'load_time': 0,
+    #         'screenshot_base64': None,
+    #         'error': None,
+    #         'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+    #         'steps': [],
+    #         'test_logs': []
+    #     }
+    #
+    #     try:
+    #         formatted_url = URLValidator.format_url(url)
+    #         driver = URLValidator.create_web_driver()
+    #
+    #         try:
+    #             if any(blocked_url in url.lower() for blocked_url in URLValidator.BLOCKED_URLS):
+    #                 try:
+    #                     driver.get(formatted_url)
+    #                 except:
+    #                     pass
+    #
+    #                 screenshot_base64 = capture_screenshot(driver)
+    #                 if screenshot_base64:
+    #                     result['screenshot_base64'] = screenshot_base64
+    #
+    #                 end_time = time.time()
+    #                 load_time = (end_time - start_time) * 1000
+    #
+    #                 log_step(STATUS_WARNING, f"Launching URL Is ==> {url}")
+    #                 log_step(STATUS_WARNING, "Page Is Blocked By PaloAlto")
+    #                 log_step('INFO', f"Time Taken ==> {load_time:.2f} Milliseconds")
+    #
+    #                 result.update({
+    #                     'status': STATUS_WARNING,
+    #                     'error': "Page Is Blocked By PaloAlto",
+    #                     'category': 'WARNING',
+    #                     'load_time': round(load_time, 2),
+    #                     'test_logs': test_logs
+    #                 })
+    #                 return result
+    #
+    #             log_step('INFO', f"Launching URL Is ==> {formatted_url}")
+    #             driver.get(formatted_url)
+    #             driver_end_time = time.time()
+    #             load_time = (driver_end_time - start_time) * 1000
+    #
+    #             screenshot_base64 = capture_screenshot(driver)
+    #             if screenshot_base64:
+    #                 result['screenshot_base64'] = screenshot_base64
+    #
+    #             if not URLValidator.is_valid_url(url):
+    #                 end_time = time.time()
+    #                 load_time = (end_time - start_time) * 1000
+    #                 result.update({
+    #                     'status': STATUS_FAILED,
+    #                     'error': "Invalid URL format",
+    #                     'category': 'ERROR',
+    #                     'test_logs': test_logs,
+    #                     'load_time': round(load_time, 2)
+    #                 })
+    #                 return result
+    #
+    #             page_title = driver.title
+    #             redirected_url = driver.current_url
+    #             load_time = (time.time() - start_time) * 1000
+    #
+    #             log_step('INFO', f"Title Of The Page Is ==> {page_title}")
+    #             log_step('INFO', f"Redirected URL Is ==> {redirected_url}")
+    #             log_step('INFO', f"Time Taken to Launch Application - {formatted_url} ==> {load_time:.2f} Milliseconds")
+    #
+    #             status_result = URLValidator.check_url_status(driver)
+    #             status_result['load_time'] = round(load_time, 2)
+    #             status_result['screenshot_base64'] = result.get('screenshot_base64')
+    #             result.update(status_result)
+    #
+    #         except Exception as e:
+    #             screenshot_base64 = capture_screenshot(driver)
+    #             if screenshot_base64:
+    #                 result['screenshot_base64'] = screenshot_base64
+    #
+    #             end_time = time.time()
+    #             load_time = (end_time - start_time) * 1000
+    #             result.update({
+    #                 'status': STATUS_FAILED,
+    #                 'error': str(e),
+    #                 'category': 'ERROR',
+    #                 'load_time': round(load_time, 2)
+    #             })
+    #
+    #     except Exception as e:
+    #         end_time = time.time()
+    #         load_time = (end_time - start_time) * 1000
+    #         result.update({
+    #             'status': STATUS_FAILED,
+    #             'error': str(e),
+    #             'category': 'ERROR',
+    #             'load_time': round(load_time, 2)
+    #         })
+    #
+    #     finally:
+    #         if result['load_time'] == 0:
+    #             end_time = time.time()
+    #             result['load_time'] = round((end_time - start_time) * 1000, 2)
+    #
+    #         result['test_logs'] = test_logs
+    #         if driver:
+    #             try:
+    #                 driver.quit()
+    #             except Exception:
+    #                 pass
+    #
+    #         return result
+
+    @staticmethod
+    def is_valid_url(url):
+        """Validate URL format"""
+        try:
+            result = urlparse(URLValidator.format_url(url))
+            return all([result.scheme, result.netloc])
+        except:
+            return False
+
+    @staticmethod
+    def format_url(url):
+        """Format URL with proper protocol"""
+        if not url:
+            return ""
+        url = url.strip()
+        if not url.startswith(("https://", "http://")):
+            return f"https://{url}"
+        return url
+
+    # @staticmethod
+    # def check_url_status(driver):
+    #     """Check URL status"""
+    #     try:
+    #         current_url = driver.current_url.lower()
+    #         page_title = driver.title if driver.title else ""
+    #
+    #         navigation_start = driver.execute_script("return window.performance.timing.navigationStart")
+    #         response_end = driver.execute_script("return window.performance.timing.responseEnd")
+    #         duration = response_end - navigation_start
+    #
+    #         # Check for blocked URLs
+    #         if any(blocked_url in current_url for blocked_url in URLValidator.BLOCKED_URLS):
+    #             return ReportHandler.format_validation_result(
+    #                 url=current_url,
+    #                 status='Warning',
+    #                 title=page_title,
+    #                 redirected_url=current_url,
+    #                 duration=duration,
+    #                 error='Page Is Blocked By PaloAlto',
+    #                 category='WARNING'
+    #             )
+    #         else:
+    #             return ReportHandler.format_validation_result(
+    #                 url=current_url,
+    #                 status='Success',
+    #                 title=page_title,
+    #                 redirected_url=current_url,
+    #                 duration=duration,
+    #                 error=None,
+    #                 category='SUCCESS'
+    #             )
+    #
+    #     except Exception as e:
+    #         duration = time.time() * 1000
+    #         logging.error(f"Error in check_url_status: {str(e)}")
+    #         return ReportHandler.format_validation_result(
+    #             url=current_url if 'current_url' in locals() else "Unknown URL",
+    #             status='Failed',
+    #             title="Error",
+    #             redirected_url="",
+    #             #duration=0,
+    #             duration=duration,
+    #             error=str(e),
+    #             category='SYSTEM_ERROR'
+    #         )
+
     @staticmethod
     def process_url(url, row_number, config):
         """Process a single URL and return results"""
@@ -194,14 +443,14 @@ class URLValidator:
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
             if "Launching URL Is ==>" in message:
-                if result.get('status') == 'Success':
-                    level = 'PASS'
-                elif result.get('status') == 'Failed':
-                    level = 'FAIL'
-                elif result.get('status') == 'Warning':
-                    level = 'WARNING'
-                elif result.get('status') == 'Skip':
-                    level = 'SKIP'
+                if result.get('status') == STATUS_SUCCESS:
+                    level = LEVEL_PASS
+                elif result.get('status') == STATUS_FAILED:
+                    level = LEVEL_FAIL
+                elif result.get('status') == STATUS_WARNING:
+                    level = LEVEL_WARNING
+                elif result.get('status') == STATUS_SKIP:
+                    level = LEVEL_SKIP
 
             log_entry = {
                 'timestamp': timestamp,
@@ -210,13 +459,13 @@ class URLValidator:
             }
             test_logs.append(log_entry)
 
-            if level in ['ERROR', 'FAIL', 'Failed']:
+            if level in [LEVEL_ERROR, LEVEL_FAIL, STATUS_FAILED]:
                 print(f"{Fore.RED}✗ [{timestamp}] {message}{Style.RESET_ALL}")
-            elif level in ['WARNING', 'Warning', 'warning']:
+            elif level in [LEVEL_WARNING, STATUS_WARNING]:
                 print(f"{Fore.YELLOW}⚠ [{timestamp}] {message}{Style.RESET_ALL}")
-            elif level in ['SUCCESS', 'PASS']:
+            elif level in [STATUS_SUCCESS, LEVEL_PASS]:
                 print(f"{Fore.GREEN}✓ [{timestamp}] {message}{Style.RESET_ALL}")
-            elif level in ['SKIP', 'Skip']:
+            elif level in [LEVEL_SKIP, STATUS_SKIP]:
                 print(f"{Fore.BLUE}○ [{timestamp}] {message}{Style.RESET_ALL}")
             else:
                 print(f"{Fore.CYAN}{symbol} [{timestamp}] {message}{Style.RESET_ALL}")
@@ -224,12 +473,11 @@ class URLValidator:
         def capture_screenshot(driver, attempt_number=""):
             """Helper function to capture screenshot with logging"""
             try:
-                time.sleep(2)  # Wait for page stability
+                time.sleep(2)
                 driver.execute_script("document.body.style.overflow = 'hidden';")
                 screenshot = driver.get_screenshot_as_png()
                 driver.execute_script("document.body.style.overflow = '';")
                 if screenshot:
-                    #log_step('SUCCESS', f"Screenshot captured successfully{attempt_number}")
                     return base64.b64encode(screenshot).decode('utf-8')
                 log_step('WARNING', f"Screenshot capture returned no data{attempt_number}")
                 return None
@@ -255,14 +503,12 @@ class URLValidator:
             driver = URLValidator.create_web_driver()
 
             try:
-                # For blocked URLs
                 if any(blocked_url in url.lower() for blocked_url in URLValidator.BLOCKED_URLS):
                     try:
                         driver.get(formatted_url)
                     except:
-                        pass  # Continue even if the page load fails
+                        pass
 
-                    # Always try to capture screenshot
                     screenshot_base64 = capture_screenshot(driver)
                     if screenshot_base64:
                         result['screenshot_base64'] = screenshot_base64
@@ -270,12 +516,12 @@ class URLValidator:
                     end_time = time.time()
                     load_time = (end_time - start_time) * 1000
 
-                    log_step('WARNING', f"Launching URL Is ==> {url}")
-                    log_step('WARNING', "Page Is Blocked By PaloAlto")
+                    log_step(STATUS_WARNING, f"Launching URL Is ==> {url}")
+                    log_step(STATUS_WARNING, "Page Is Blocked By PaloAlto")
                     log_step('INFO', f"Time Taken ==> {load_time:.2f} Milliseconds")
 
                     result.update({
-                        'status': 'Warning',
+                        'status': STATUS_WARNING,
                         'error': "Page Is Blocked By PaloAlto",
                         'category': 'WARNING',
                         'load_time': round(load_time, 2),
@@ -283,27 +529,27 @@ class URLValidator:
                     })
                     return result
 
-                # For non-blocked URLs
                 log_step('INFO', f"Launching URL Is ==> {formatted_url}")
                 driver.get(formatted_url)
                 driver_end_time = time.time()
                 load_time = (driver_end_time - start_time) * 1000
 
-                # Always try to capture screenshot
                 screenshot_base64 = capture_screenshot(driver)
                 if screenshot_base64:
                     result['screenshot_base64'] = screenshot_base64
 
+                # For invalid URL case
                 if not URLValidator.is_valid_url(url):
                     end_time = time.time()
                     load_time = (end_time - start_time) * 1000
                     result.update({
-                        'status': 'Failed',
+                        'status': STATUS_FAILED,
                         'error': "Invalid URL format",
                         'category': 'ERROR',
                         'test_logs': test_logs,
                         'load_time': round(load_time, 2)
                     })
+                    log_step('INFO', f"Time Taken ==> {load_time:.2f} Milliseconds")
                     return result
 
                 page_title = driver.title
@@ -314,14 +560,13 @@ class URLValidator:
                 log_step('INFO', f"Redirected URL Is ==> {redirected_url}")
                 log_step('INFO', f"Time Taken to Launch Application - {formatted_url} ==> {load_time:.2f} Milliseconds")
 
-                # Check page status
                 status_result = URLValidator.check_url_status(driver)
                 status_result['load_time'] = round(load_time, 2)
-                status_result['screenshot_base64'] = result.get('screenshot_base64')  # Preserve the screenshot
+                status_result['screenshot_base64'] = result.get('screenshot_base64')
                 result.update(status_result)
 
+            # For exception case inside try block
             except Exception as e:
-                # Try to capture screenshot even if there's an error
                 screenshot_base64 = capture_screenshot(driver)
                 if screenshot_base64:
                     result['screenshot_base64'] = screenshot_base64
@@ -329,21 +574,26 @@ class URLValidator:
                 end_time = time.time()
                 load_time = (end_time - start_time) * 1000
                 result.update({
-                    'status': 'Failed',
+                    'status': STATUS_FAILED,
                     'error': str(e),
                     'category': 'ERROR',
                     'load_time': round(load_time, 2)
                 })
+                log_step('INFO', f"Time Taken ==> {load_time:.2f} Milliseconds")
+                return result
 
+        # For outer exception case
         except Exception as e:
             end_time = time.time()
             load_time = (end_time - start_time) * 1000
             result.update({
-                'status': 'Failed',
+                'status': STATUS_FAILED,
                 'error': str(e),
                 'category': 'ERROR',
                 'load_time': round(load_time, 2)
             })
+            log_step('INFO', f"Time Taken ==> {load_time:.2f} Milliseconds")  # Add this line
+            return result
 
         finally:
             if result['load_time'] == 0:
@@ -360,41 +610,21 @@ class URLValidator:
             return result
 
     @staticmethod
-    def is_valid_url(url):
-        """Validate URL format"""
-        try:
-            result = urlparse(URLValidator.format_url(url))
-            return all([result.scheme, result.netloc])
-        except:
-            return False
-
-    @staticmethod
-    def format_url(url):
-        """Format URL with proper protocol"""
-        if not url:
-            return ""
-        url = url.strip()
-        if not url.startswith(("https://", "http://")):
-            return f"https://{url}"
-        return url
-
-    @staticmethod
     def check_url_status(driver):
         """Check URL status"""
         try:
             current_url = driver.current_url.lower()
             page_title = driver.title if driver.title else ""
-            page_source = driver.page_source.lower()  # Get page source and convert to lowercase
+            page_source = driver.page_source.lower()
 
             navigation_start = driver.execute_script("return window.performance.timing.navigationStart")
             response_end = driver.execute_script("return window.performance.timing.responseEnd")
             duration = response_end - navigation_start
 
-            # Check various conditions for different statuses
             if any(blocked_url in current_url for blocked_url in URLValidator.BLOCKED_URLS):
                 return ReportHandler.format_validation_result(
                     url=current_url,
-                    status='Warning',
+                    status=STATUS_WARNING,
                     title=page_title,
                     redirected_url=current_url,
                     duration=duration,
@@ -404,7 +634,7 @@ class URLValidator:
             elif "this page isn't working" in page_source:
                 return ReportHandler.format_validation_result(
                     url=current_url,
-                    status='Failed',
+                    status=STATUS_FAILED,
                     title=page_title,
                     redirected_url=current_url,
                     duration=duration,
@@ -414,7 +644,7 @@ class URLValidator:
             elif "web - access blocked" in page_source:
                 return ReportHandler.format_validation_result(
                     url=current_url,
-                    status='Skip',
+                    status=STATUS_SKIP,
                     title=page_title,
                     redirected_url=current_url,
                     duration=duration,
@@ -424,7 +654,7 @@ class URLValidator:
             else:
                 return ReportHandler.format_validation_result(
                     url=current_url,
-                    status='Success',
+                    status=STATUS_SUCCESS,
                     title=page_title,
                     redirected_url=current_url,
                     duration=duration,
@@ -436,7 +666,7 @@ class URLValidator:
             logging.error(f"Error in check_url_status: {str(e)}")
             return ReportHandler.format_validation_result(
                 url=current_url if 'current_url' in locals() else "Unknown URL",
-                status='Failed',
+                status=STATUS_FAILED,
                 title="Error",
                 redirected_url="",
                 duration=0,
@@ -625,10 +855,10 @@ class ValidationRunner:
         end_time = datetime.now()
         duration = end_time - self.start_time
 
-        success_count = sum(1 for r in results if r['status'] == 'Success')
-        warning_count = sum(1 for r in results if r['status'] == 'Warning')
-        skip_count = sum(1 for r in results if r['status'] == 'Skip')
-        fail_count = sum(1 for r in results if r['status'] == 'Failed')
+        success_count = sum(1 for r in results if r['status'] == STATUS_SUCCESS)
+        warning_count = sum(1 for r in results if r['status'] == STATUS_WARNING)
+        skip_count = sum(1 for r in results if r['status'] == STATUS_SKIP)
+        fail_count = sum(1 for r in results if r['status'] == STATUS_FAILED)
 
         total_excluding_skipped = len(results) - skip_count
         success_rate = (success_count / total_excluding_skipped * 100) if total_excluding_skipped > 0 else 0
@@ -648,20 +878,20 @@ class ValidationRunner:
         if fail_count > 0:
             print(f"{Fore.RED}Failed URLs:{Style.RESET_ALL}")
             for result in results:
-                if result['status'] == 'Failed':
+                if result['status'] == STATUS_FAILED:
                     print(f"{Fore.RED}✗ {result['url']}: {result.get('error', 'Unknown error')}{Style.RESET_ALL}")
 
         if warning_count > 0:
             print(f"\n{Fore.YELLOW}Warning URLs:{Style.RESET_ALL}")
             for result in results:
-                if result['status'] == 'Warning':
+                if result['status'] == STATUS_WARNING:
                     print(
                         f"{Fore.YELLOW}⚠ {result['url']}: {result.get('error', 'Performance/Security Warning')}{Style.RESET_ALL}")
 
         if skip_count > 0:
             print(f"\n{Fore.BLUE}Skipped URLs:{Style.RESET_ALL}")
             for result in results:
-                if result['status'] == 'Skip':
+                if result['status'] == STATUS_SKIP:
                     print(f"{Fore.BLUE}○ {result['url']}: {result.get('error', 'Unknown error')}{Style.RESET_ALL}")
 
     def validate_urls(self):
