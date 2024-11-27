@@ -384,12 +384,13 @@ class URLValidator:
         try:
             current_url = driver.current_url.lower()
             page_title = driver.title if driver.title else ""
+            page_source = driver.page_source.lower()  # Get page source and convert to lowercase
 
             navigation_start = driver.execute_script("return window.performance.timing.navigationStart")
             response_end = driver.execute_script("return window.performance.timing.responseEnd")
             duration = response_end - navigation_start
 
-            # Check for blocked URLs
+            # Check various conditions for different statuses
             if any(blocked_url in current_url for blocked_url in URLValidator.BLOCKED_URLS):
                 return ReportHandler.format_validation_result(
                     url=current_url,
