@@ -874,25 +874,33 @@ class ValidationRunner:
         print(f"{Fore.YELLOW}⚠ Warnings: {warning_count}{Style.RESET_ALL}")
         print(f"{Fore.BLUE}○ Skipped: {skip_count}{Style.RESET_ALL}")
         print(f"{Fore.YELLOW}Success Rate: {success_rate:.2f}%{Style.RESET_ALL}\n")
+        print(f"{Fore.CYAN}{'-' * 40}{Style.RESET_ALL}")
 
-        if fail_count > 0:
-            print(f"{Fore.RED}Failed URLs:{Style.RESET_ALL}")
-            for result in results:
-                if result['status'] == STATUS_FAILED:
-                    print(f"{Fore.RED}✗ {result['url']}: {result.get('error', 'Unknown error')}{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}Time Duration{Style.RESET_ALL}".center(40))
+        print(f"{Fore.CYAN}{'-' * 40}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}Start Time: {self.start_time.strftime('%H:%M:%S')}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}End Time: {self.end_time.strftime('%H:%M:%S')}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}Duration: {duration}{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'=' * 40}{Style.RESET_ALL}")
 
-        if warning_count > 0:
-            print(f"\n{Fore.YELLOW}Warning URLs:{Style.RESET_ALL}")
-            for result in results:
-                if result['status'] == STATUS_WARNING:
-                    print(
-                        f"{Fore.YELLOW}⚠ {result['url']}: {result.get('error', 'Performance/Security Warning')}{Style.RESET_ALL}")
-
-        if skip_count > 0:
-            print(f"\n{Fore.BLUE}Skipped URLs:{Style.RESET_ALL}")
-            for result in results:
-                if result['status'] == STATUS_SKIP:
-                    print(f"{Fore.BLUE}○ {result['url']}: {result.get('error', 'Unknown error')}{Style.RESET_ALL}")
+        # if fail_count > 0:
+        #     print(f"{Fore.RED}Failed URLs:{Style.RESET_ALL}")
+        #     for result in results:
+        #         if result['status'] == STATUS_FAILED:
+        #             print(f"{Fore.RED}✗ {result['url']}: {result.get('error', 'Unknown error')}{Style.RESET_ALL}")
+        #
+        # if warning_count > 0:
+        #     print(f"\n{Fore.YELLOW}Warning URLs:{Style.RESET_ALL}")
+        #     for result in results:
+        #         if result['status'] == STATUS_WARNING:
+        #             print(
+        #                 f"{Fore.YELLOW}⚠ {result['url']}: {result.get('error', 'Performance/Security Warning')}{Style.RESET_ALL}")
+        #
+        # if skip_count > 0:
+        #     print(f"\n{Fore.BLUE}Skipped URLs:{Style.RESET_ALL}")
+        #     for result in results:
+        #         if result['status'] == STATUS_SKIP:
+        #             print(f"{Fore.BLUE}○ {result['url']}: {result.get('error', 'Unknown error')}{Style.RESET_ALL}")
 
     def validate_urls(self):
         """Run the URL validation process"""
@@ -961,12 +969,17 @@ class ValidationRunner:
                 html_report = ReportHandler.generate_detailed_html_report(results, paths["reports"])
                 print(f"{Fore.GREEN}✓ HTML report generated: {html_report}{Style.RESET_ALL}")
 
+                self.end_time = datetime.now()
+                print(f"End Time: {self.end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                print(f"{Fore.CYAN}{'=' * 80}{Style.RESET_ALL}")
+
             except Exception as e:
                 print(f"{Fore.RED}✗ Error generating reports: {str(e)}{Style.RESET_ALL}")
 
             self.print_summary(results)
 
         except Exception as e:
+            self.end_time = datetime.now()
             print(f"\n{Fore.RED}✗ Validation process failed: {str(e)}{Style.RESET_ALL}")
             print(f"\n{Fore.RED}Stack trace:{Style.RESET_ALL}")
             print(traceback.format_exc())
