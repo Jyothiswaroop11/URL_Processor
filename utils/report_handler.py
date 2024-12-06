@@ -4,10 +4,12 @@ import time
 import shutil
 import logging
 from datetime import datetime
+import colorama
+from colorama import Fore, Style
 
 # Global status variables - matching with URL_validator.py
-STATUS_SUCCESS = "Success"
-STATUS_FAILED = "Failed"
+STATUS_SUCCESS = "Pass"
+STATUS_FAILED = "Fail"
 STATUS_WARNING = "Warning"
 STATUS_SKIP = "Skip"
 
@@ -32,7 +34,7 @@ class ReportHandler:
 
     @staticmethod
     def backup_previous_reports():
-        """Backup previous reports"""
+        """Backup previous HTML reports"""
         try:
             paths = ReportHandler.get_project_paths()
             report_dir = paths["html_reports"]
@@ -50,10 +52,10 @@ class ReportHandler:
                     backup_filename = f"Previous-{filename.replace('.html', '')}_{timestamp}.html"
                     dst_path = os.path.join(backup_dir, backup_filename)
                     shutil.move(src_path, dst_path)
-                    print(f"Backed up report: {dst_path}")
+                    print(f"{Fore.GREEN}✓ Backed up HTML report: {dst_path}")
 
         except Exception as e:
-            print(f"Error during report backup: {str(e)}")
+            print(f"Error during HTML report backup: {str(e)}")
 
     @staticmethod
     def ensure_report_directory():
@@ -77,9 +79,9 @@ class ReportHandler:
         return {
             'total': total,
             'passed': passed,
-            'failed': failed + warnings,
-            'skipped': skipped,
+            'failed': failed,
             'warnings': warnings,
+            'skipped': skipped,
             'pass_rate': pass_rate,
             'total_duration': sum(result.get('load_time', 0) for result in results)
         }
@@ -377,7 +379,31 @@ class ReportHandler:
             .stat-item.failed .stat-label {
                 color: #fecaca;
             }
+            .stat-item.warning {
+                background: linear-gradient(145deg, #ff9800, #f57c00);
+                box-shadow: 0 2px 4px rgba(255, 152, 0, 0.2);
+            }
+            .stat-item.warning .stat-value {
+                color: #ffffff;
+                font-size: 1.5rem;
+                font-weight: 700;
+            }
+            .stat-item.warning .stat-label {
+                color: #fff3e0;
+            }
 
+            .stat-item.skip {
+                background: linear-gradient(145deg, #64748b, #475569);
+                box-shadow: 0 2px 4px rgba(100, 116, 139, 0.2);
+            }
+            .stat-item.skip .stat-value {
+                color: #ffffff;
+                font-size: 1.5rem;
+                font-weight: 700;
+            }
+            .stat-item.skip .stat-label {
+                color: #e2e8f0;
+            }
             .stat-item.pass-rate {
                 background: linear-gradient(145deg, #8b5cf6, #7c3aed);
                 box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
@@ -1078,8 +1104,18 @@ class ReportHandler:
                     urlItems.forEach(item => {
                         const statusBadge = item.querySelector('.status-badge');
                         const status = statusBadge ? statusBadge.textContent.trim().toLowerCase() : '';
+                        
+                        // Map display statuses to filter values
+                        const statusMap = {
+                            'pass': 'success',
+                            'fail': 'failed',
+                            'warning': 'warning',
+                            'skip': 'skip'
+                        };
+                        
+                        const normalizedStatus = statusMap[status] || status;
 
-                        if (statusFilter === 'all' || status === statusFilter) {
+                        if (statusFilter === 'all' || normalizedStatus === statusFilter) {
                             item.style.display = 'block';
                         } else {
                             item.style.display = 'none';
@@ -1241,6 +1277,14 @@ class ReportHandler:
                                 <div class="stat-label">Failed</div>
                                 <div class="stat-value">{stats['failed']}</div>
                             </div>
+                            <div class="stat-item warning">
+                                <div class="stat-label">Warning</div>
+                                <div class="stat-value">{stats['warnings']}</div>
+                            </div>
+                            <div class="stat-item skip">
+                                <div class="stat-label">Skipped</div>
+                                <div class="stat-value">{stats['skipped']}</div>
+                            </div>
                             <div class="stat-item pass-rate">
                                 <div class="stat-label">Pass Rate</div>
                                 <div class="stat-value">{stats['pass_rate']:.1f}%</div>
@@ -1255,30 +1299,28 @@ class ReportHandler:
                                 <div class="filter-bar">
                                     <div class="filter-controls">
                                         <select id="statusFilter" class="filter-input" onchange="filterItems()">
-            <option value="all">All Status</option>
-                                                        <option value="success">Success</option>
-                                                        <option value="failed">Failed</option>
-                                                        <option value="warning">Warning</option>
-                                                        <option value="skip">Skipped</option>
-                                                    </select>
-                                                    <button class="filter-button" onclick="resetFilters()" title="Clear Filters">
-                                                        <i class="fas fa-times"></i> Clear
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            <ul class="url-list">{url_list_items}</ul>
-                                        </div>
-
-                                        <div class="right-panel">
-                                            {''.join(ReportHandler.generate_content_section(result, i) for i, result in enumerate(results))}
-                                        </div>
+                                            <option value="all">All Status</option>
+                                            <option value="success">Pass</option>
+                                            <option value="failed">Fail</option>
+                                            <option value="warning">Warning</option>
+                                            <option value="skip">Skip</option>
+                                        </select>
+                                        <button class="filter-button" onclick="resetFilters()" title="Clear Filters">
+                                            <i class="fas fa-times"></i> Clear
+                                        </button>
                                     </div>
                                 </div>
-                                <script>{ReportHandler.get_scripts()}</script>
-                            </body>
-                            </html>
-                        """
+                                <ul class="url-list">{url_list_items}</ul>
+                            </div>
+                            <div class="right-panel">
+                                {''.join(ReportHandler.generate_content_section(result, i) for i, result in enumerate(results))}
+                            </div>
+                        </div>
+                    </div>
+                    <script>{ReportHandler.get_scripts()}</script>
+                </body>
+                </html>
+            """
 
             with open(report_path, 'w', encoding='utf-8') as f:
                 f.write(html_content)
